@@ -1,12 +1,13 @@
 /**
  * jQuery Clock plugin
- * (c) Leftclick.com.au
- * Open source license, yahta yahta
- * Requires jquery and date.js
+ * 
+ * Display a dynamically updating client-side clock.
+ * 
+ * (c) 2012 Leftclick.com.au
+ * Licensed under the GNU General Public License (GPL).
  */
 
 (function($) {
-
 	$.clock = {
 		version: '0.1',
 		defaults: {
