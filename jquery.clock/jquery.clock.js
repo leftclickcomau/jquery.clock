@@ -122,7 +122,7 @@
 						//case 'u': return formatNumber(date.getMicroseconds(), true); // TODO
 						//case 'e': // TODO
 						//case 'I': // TODO
-						case 'O': return date.getTimezoneOffset()
+						case 'O': return date.getTimezoneOffset();
 						//case 'P': // TODO
 						//case 'T': // TODO
 						//case 'Z': // TODO
