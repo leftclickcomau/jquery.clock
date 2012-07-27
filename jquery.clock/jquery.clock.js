@@ -9,7 +9,7 @@
 
 (function($) {
 	$.clock = {
-		version: '0.1',
+		version: '0.2',
 		defaults: {
 			updateInterval: 100,
 			ajaxInterval: false,
