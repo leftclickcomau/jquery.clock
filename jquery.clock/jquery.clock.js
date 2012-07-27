@@ -24,7 +24,7 @@
 				full: [ 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December' ]
 			},
 			ordinalSuffixes: {
-				default: 'th',
+				common: 'th',
 				overrides: {
 					'1': 'st',
 					'2': 'nd',
@@ -76,7 +76,7 @@
 					},
 					formatDaySuffix = function(date) {
 						var d = date.getDate().toString();
-						return (options.ordinalSuffixes.overrides[d]) ? options.ordinalSuffixes.overrides[d] : options.ordinalSuffixes.default;
+						return (options.ordinalSuffixes.overrides[d]) ? options.ordinalSuffixes.overrides[d] : options.ordinalSuffixes.common;
 					},
 					formatMonthName = function(date, abbr) {
 						return options.monthNames[abbr ? 'abbr' : 'full'][date.getMonth() - 1];
