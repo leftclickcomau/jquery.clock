@@ -45,13 +45,17 @@
 	};
 
 	$.fn.clock = function(o) {
-		var self = this,
+		var self = $(this),
 			options = $.extend(true, {}, $.clock.defaults, o),
 			// Used to store the difference between local time and server time, to simplify calculations
 			serverOffset = 0,
+			// Get the current, local timestamp
+			getCurrentTimestamp = function() {
+				return $.isFunction(Date.now) ? Date.now() : new Date().getTime();
+			},
 			// Parse the given text as a date object
 			parseDate = function(text) {
-				return (text.length === 0) ? Date.now() : (text.match(/^\d+$/) ? new Date(parseInt(text * 1000, 10)) : new Date(Date.parse(text)));
+				return (text.length === 0) ? getCurrentTimestamp() : (text.match(/^\d+$/) ? new Date(parseInt(text * 1000, 10)) : new Date(Date.parse(text)));
 			},
 			// Date formatting function.
 			formatDate = function(date, format) {
@@ -132,22 +136,22 @@
 			},
 			// Utility functions
 			calculateServerOffset = function(serverDate) {
-				var localDate = Date.now();
+				var localDate = getCurrentTimestamp();
 				return localDate - serverDate.getTime();
 			},
 			updateView = function() {
 				var d = new Date();
-				d.setTime(Date.now() + serverOffset);
+				d.setTime(getCurrentTimestamp() + serverOffset);
 				self.html(formatDate(d, options.outputFormat));
 			},
 			updateModel = function() {
 				$.get(options.ajaxUrl, null, function(timestamp) {
-					serverOffset = calculateServerOffset(parseDate(timestamp.trim()));
+					serverOffset = calculateServerOffset(parseDate(timestamp));
 					updateView();
 				});
 			};
 		// Bootstrap
-		serverOffset = (self.text().trim().length > 0) ? calculateServerOffset(parseDate(self.text().trim())) : 0;
+		serverOffset = (self.text().length > 0) ? calculateServerOffset(parseDate(self.text())) : 0;
 		updateView();
 		if (options.updateInterval > 0) {
 			setInterval(updateView, options.updateInterval);
