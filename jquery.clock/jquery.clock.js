@@ -2,7 +2,22 @@
  * jQuery Clock plugin
  * 
  * Display a dynamically updating client-side clock.
- * 
+ *
+ * The element(s) on which the plugin is called must contain one of the following:
+ *
+ * 1. An RFC 2822 compliant date-time, e.g. 29-07-2012 18:07:44
+ * 2. A UNIX timestamp, i.e. number of seconds since 1970/01/01
+ * 3. Nothing.  The client system's clock will be used for the time.
+ *
+ * The difference between the server time embedded in the element's content, and the browser time, is stored and used
+ * to keep the displayed time in synch with the server.
+ *
+ * Optionally, the plugin can use AJAX to maintain synchronisation between the browser clock and the server clock. This
+ * is useful for pages that are expected to remain loaded for long periods of time, or where client clock is not
+ * expected to be stable.  Note that causing it too frequently will cause heavy load on the server.  The URL that is
+ * given by the "ajaxUrl" option must return one of the valid date formats identified above, anything else will give
+ * unexpected results (probably a lot of "NaN").
+ *
  * (c) 2012 Leftclick.com.au
  * Licensed under the GNU General Public License (GPL).
  */
