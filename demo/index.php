@@ -57,9 +57,9 @@ $(function() {
 		</td>
 	</tr>
 	<tr>
-		<td class="demonstration"><div id="clock1" class="clock"><?php echo time(); ?></div></td>
-		<td class="summary">Default behaviour with initial server time</td>
-		<td class="explanation">Timestamp from server:<br/><code><?php echo time(); ?></code></td>
+		<td class="demonstration"><div id="clock1" class="clock"><?php echo date('UO'); ?></div></td>
+		<td class="summary">Default behaviour with initial server time and timezone</td>
+		<td class="explanation">Timestamp from server:<br/><code><?php echo date('UO'); ?></code></td>
 		<td class="explanation">None</td>
 		<td class="explanation">None</td>
 		<td class="javascript">
@@ -73,9 +73,9 @@ $(function() {
 		</td>
 	</tr>
 	<tr>
-		<td class="demonstration"><div id="clock2" class="clock"><?php echo date('D, d M Y H:i:s'); ?></div></td>
-		<td class="summary">Custom formatting with initial server time</td>
-		<td class="explanation">Formatted date from server:<br/><code><?php echo date('D, d M Y H:i:s'); ?></code></td>
+		<td class="demonstration"><div id="clock2" class="clock"><?php echo date('D, d M Y H:i:s P'); ?></div></td>
+		<td class="summary">Custom formatting with initial server time and timezone</td>
+		<td class="explanation">Formatted date from server:<br/><code><?php echo date('D, d M Y H:i:s P'); ?></code></td>
 		<td class="explanation">None</td>
 		<td class="explanation"><code>outputFormat</code> demonstrating a different style of output</td>
 		<td class="javascript">
@@ -91,9 +91,9 @@ $(function() {
 		</td>
 	</tr>
 	<tr>
-		<td class="demonstration"><div id="clock3" class="clock"><?php echo time(); ?></div></td>
-		<td class="summary">Custom formatting (HTML) with initial server time</td>
-		<td class="explanation">Timestamp from server:<br/><code><?php echo time(); ?></code></td>
+		<td class="demonstration"><div id="clock3" class="clock"><?php echo date('UP'); ?></div></td>
+		<td class="summary">Custom formatting (HTML) with initial server time and timezone</td>
+		<td class="explanation">Timestamp from server:<br/><code><?php echo date('UP'); ?></code></td>
 		<td class="explanation">None</td>
 		<td class="explanation"><code>outputFormat</code> demonstrating use of HTML markup in the output</td>
 		<td class="javascript">
@@ -109,9 +109,9 @@ $(function() {
 		</td>
 	</tr>
 	<tr>
-		<td class="demonstration"><div id="clock4" class="clock"><?php echo date('Y/m/d H:i:s'); ?></div></td>
-		<td class="summary">Default behaviour with initial formatted server time</td>
-		<td class="explanation">Formatted date from server:<br/><code><?php echo date('Y/m/d H:i:s'); ?></code></td>
+		<td class="demonstration"><div id="clock4" class="clock">2012/07/30 12:00:00 +08:00</div></td>
+		<td class="summary">Default behaviour with initial formatted hardcoded time</td>
+		<td class="explanation">Formatted, hardcoded date:<br/><code>2012/07/30 12:00:00 +08:00</code></td>
 		<td class="explanation">None</td>
 		<td class="explanation">None</td>
 		<td class="javascript">
@@ -125,9 +125,9 @@ $(function() {
 		</td>
 	</tr>
 	<tr>
-		<td class="demonstration"><div id="clock5" class="clock"><?php echo time(); ?></div></td>
+		<td class="demonstration"><div id="clock5" class="clock"><?php echo date('UP'); ?></div></td>
 		<td class="summary">Default behaviour with initial server timestamp and AJAX updates (also timestamps)</td>
-		<td class="explanation">Timestamp from server:<br/><code><?php echo time(); ?></code></td>
+		<td class="explanation">Timestamp from server:<br/><code><?php echo date('UP'); ?></code></td>
 		<td class="explanation">Once per minute from <code>date.php</code> (returns a timestamp from server)</td>
 		<td class="explanation">None</td>
 		<td class="javascript">
@@ -144,9 +144,9 @@ $(function() {
 		</td>
 	</tr>
 	<tr>
-		<td class="demonstration"><div id="clock6" class="clock"><?php echo date('Y/m/d H:i:s'); ?></div></td>
+		<td class="demonstration"><div id="clock6" class="clock"><?php echo date('Y/m/d H:i:s P'); ?></div></td>
 		<td class="summary">Default behaviour with initial server formatted time and AJAX updates (also formatted time)</td>
-		<td class="explanation">Formatted date from server:<br/><code><?php echo date('Y/m/d H:i:s'); ?></code></td>
+		<td class="explanation">Formatted date from server:<br/><code><?php echo date('Y/m/d H:i:s P'); ?></code></td>
 		<td class="explanation">Once per minute from <code>date.php</code> (returns a timestamp from server)</td>
 		<td class="explanation">None</td>
 		<td class="javascript">
@@ -158,7 +158,26 @@ $(function() {
 		ajaxUrl: 'date2.php'
 	});
 });
-<?php echo htmlentities(ob_get_clean()); ?>
+	<?php echo htmlentities(ob_get_clean()); ?>
+</pre>
+		</td>
+	</tr>
+	<tr>
+		<td class="demonstration"><div id="clock7" class="clock"><?php echo time(); ?></div></td>
+		<td class="summary">Default behaviour with initial server timestamp and no timezone -- THIS IS WRONG!</td>
+		<td class="explanation">Timestamp from server:<br/><code><?php echo time(); ?></code></td>
+		<td class="explanation">None</td>
+		<td class="explanation">None</td>
+		<td class="javascript">
+<pre>
+<?php ob_start(); ?>
+$(function() {
+	$('#clock6').clock({
+		ajaxInterval: 60000,
+		ajaxUrl: 'date2.php'
+	});
+});
+	<?php echo htmlentities(ob_get_clean()); ?>
 </pre>
 		</td>
 	</tr>
@@ -186,6 +205,7 @@ $(function() {
 			ajaxInterval: 60000,
 			ajaxUrl: 'date2.php'
 		});
+		$('#clock7').clock();
 
 		$('td.javascript').each(function() {
 			var $popup = $('<div></div>').addClass('popup').html($(this).html()).hide().appendTo($(document.body));

@@ -59,7 +59,7 @@
 			 * Format mask for the date output.  This uses the same format string as used by the PHP date() function.
 			 * See http://php.net/manual/en/function.date.php for details.
 			 */
-			outputFormat: '%Y-%m-%d %H:%i:%s',
+			outputFormat: 'default',
 
 			/**
 			 * Day names for formatting using the 'D' and 'L' format specifiers.  Override this if your language is not
@@ -114,14 +114,10 @@
 		var self = $(this),
 			o = $.extend(true, {}, $.clock.defaults, options),
 			// Used to store the difference between local time and server time, to simplify calculations
-			serverOffset = 0,
+			serverOffset, serverTimezoneOffset, localTimezoneOffset = new Date().getTimezoneOffset() * -60,
 			// Get the current, local timestamp
 			getCurrentTimestamp = function() {
 				return $.isFunction(Date.now) ? Date.now() : new Date().getTime();
-			},
-			// Parse the given text as a date object
-			parseDate = function(text) {
-				return (text.length === 0) ? getCurrentTimestamp() : (text.match(/^\d+$/) ? new Date(parseInt(text * 1000, 10)) : new Date(Date.parse(text)));
 			},
 			// Date formatting function.
 			formatDate = function(date, format) {
@@ -137,9 +133,8 @@
 					return date.toLocaleString();
 				}
 				// Utility formatting functions
-				var formatNumber = function(number, pad) {
-						var s = number.toString();
-						return pad ? ((s.length === 1) ? "0" + s : s) : s;
+				var formatNumber = function(number, pad, plusSign) {
+						return (pad && Math.abs(number) < 10) ? (number < 0 ? '-' : (plusSign ? '+' : '')) + '0' + Math.abs(number).toString() : number.toString();
 					},
 					formatDayName = function(date, abbr) {
 						return o.dayNames[abbr ? 'abbr' : 'full'][date.getDay()];
@@ -153,6 +148,9 @@
 					},
 					formatAmPm = function(date) {
 						return date.getHours() < 12 ? 'AM' : 'PM';
+					},
+					formatTimezoneOffset = function(offsetMinutes) {
+						return formatNumber(offsetMinutes / 60, true, true) + formatNumber(offsetMinutes % 60, true);
 					};
 				// Expand full format specifiers into their equivalent components
 				$.each(o.aliases, function(alias) {
@@ -183,41 +181,59 @@
 						case 'a': return formatAmPm(date).toLowerCase();
 						case 'A': return formatAmPm(date).toUpperCase();
 						//case 'B': // wtf?!
-						case 'g': return formatNumber(date.getHours() % 12, false);
+						case 'g': return formatNumber((date.getHours() - 1) % 12 + 1, false);
 						case 'G': return formatNumber(date.getHours(), false);
-						case 'h': return formatNumber(date.getHours() % 12, true);
+						case 'h': return formatNumber((date.getHours() - 1) % 12 + 1, true);
 						case 'H': return formatNumber(date.getHours(), true);
 						case 'i': return formatNumber(date.getMinutes(), true);
 						case 's': return formatNumber(date.getSeconds(), true);
 						//case 'u': return formatNumber(date.getMicroseconds(), true); // TODO
 						//case 'e': // TODO
 						//case 'I': // TODO
-						case 'O': return date.getTimezoneOffset();
+						case 'O': return formatTimezoneOffset(serverTimezoneOffset / 60);
 						//case 'P': // TODO
 						//case 'T': // TODO
 						//case 'Z': // TODO
+						case 'U': return date.getTime();
 						default: return token;
 					}
 				});
 			},
 			// Utility functions
-			calculateServerOffset = function(serverDate) {
-				var localDate = getCurrentTimestamp();
-				return localDate - serverDate.getTime();
+			parseServerDate = function(text) {
+				var serverTimezone, serverTime, localTime = getCurrentTimestamp();
+
+				// Determine the UTC time
+				serverTime = (text.length === 0) ?
+					localTime :
+					((text.match(/^\d+(?:[\+\-]\d{2}:?\d{2})?$/)) ?
+						parseInt(text.replace(/[\+\-]\d{2}:?\d{2}$/, ''), 10) * 1000 :
+						new Date(text).getTime());
+				serverOffset = localTime - serverTime;
+
+				// Determine the timezone offset
+				if (text.match(/[\+\-]\d{2}:?\d{2}$/)) {
+					// Parse timezone offset from text.
+					serverTimezone = text.replace(/^.*([\+\-]\d{2}:?\d{2})$/, '$1');
+					serverTimezoneOffset = (parseInt(serverTimezone.substring(0, 3), 10) * 60 + parseInt(serverTimezone.substring(serverTimezone.length - 2), 10)) * 60;
+				} else {
+					// Use client-side timezone offset.
+					serverTimezoneOffset = new Date().getTimezoneOffset() * -60;
+				}
 			},
 			updateView = function() {
 				var d = new Date();
-				d.setTime(getCurrentTimestamp() + serverOffset);
+				d.setTime(getCurrentTimestamp() - serverOffset + (serverTimezoneOffset - localTimezoneOffset) * 1000);
 				self.html(formatDate(d, o.outputFormat));
 			},
 			updateModel = function() {
-				$.get(o.ajaxUrl, null, function(timestamp) {
-					serverOffset = calculateServerOffset(parseDate(timestamp));
+				$.get(o.ajaxUrl, null, function(result) {
+					parseServerDate(result);
 					updateView();
 				});
 			};
 		// Bootstrap
-		serverOffset = (self.text().length > 0) ? calculateServerOffset(parseDate(self.text())) : 0;
+		parseServerDate(self.text());
 		updateView();
 		if (o.updateInterval > 0) {
 			setInterval(updateView, o.updateInterval);
