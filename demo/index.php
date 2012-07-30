@@ -73,9 +73,9 @@ $(function() {
 		</td>
 	</tr>
 	<tr>
-		<td class="demonstration"><div id="clock2" class="clock"><?php echo date('D, d M Y H:i:s P'); ?></div></td>
+		<td class="demonstration"><div id="clock2" class="clock"><?php echo date('r'); ?></div></td>
 		<td class="summary">Custom formatting with initial server time and timezone</td>
-		<td class="explanation">Formatted date from server:<br/><code><?php echo date('D, d M Y H:i:s P'); ?></code></td>
+		<td class="explanation">Formatted date from server:<br/><code><?php echo date('r'); ?></code></td>
 		<td class="explanation">None</td>
 		<td class="explanation"><code>outputFormat</code> demonstrating a different style of output</td>
 		<td class="javascript">
@@ -109,9 +109,9 @@ $(function() {
 		</td>
 	</tr>
 	<tr>
-		<td class="demonstration"><div id="clock4" class="clock">2012/07/30 12:00:00 +08:00</div></td>
+		<td class="demonstration"><div id="clock4" class="clock">2012-07-30T12:00:00+08:00</div></td>
 		<td class="summary">Default behaviour with initial formatted hardcoded time</td>
-		<td class="explanation">Formatted, hardcoded date:<br/><code>2012/07/30 12:00:00 +08:00</code></td>
+		<td class="explanation">Formatted, hardcoded date:<br/><code>2012-07-30T12:00:00+08:00</code></td>
 		<td class="explanation">None</td>
 		<td class="explanation">None</td>
 		<td class="javascript">
@@ -144,9 +144,9 @@ $(function() {
 		</td>
 	</tr>
 	<tr>
-		<td class="demonstration"><div id="clock6" class="clock"><?php echo date('Y/m/d H:i:s P'); ?></div></td>
+		<td class="demonstration"><div id="clock6" class="clock"><?php echo date('c'); ?></div></td>
 		<td class="summary">Default behaviour with initial server formatted time and AJAX updates (also formatted time)</td>
-		<td class="explanation">Formatted date from server:<br/><code><?php echo date('Y/m/d H:i:s P'); ?></code></td>
+		<td class="explanation">Formatted date from server:<br/><code><?php echo date('c'); ?></code></td>
 		<td class="explanation">Once per minute from <code>date.php</code> (returns a timestamp from server)</td>
 		<td class="explanation">None</td>
 		<td class="javascript">
