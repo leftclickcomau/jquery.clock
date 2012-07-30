@@ -5,9 +5,13 @@
  *
  * The element(s) on which the plugin is called must contain one of the following:
  *
- * 1. An RFC 2822 compliant date-time, e.g. 29-07-2012 18:07:44
- * 2. A UNIX timestamp, i.e. number of seconds since the beginning of the year 1970
- * 3. Nothing.  The client system's clock will be used for the time.
+ * 1. An RFC 2822 compliant date-time, e.g. 29-07-2012 18:07:44 +08:00
+ * 2. A UNIX timestamp, i.e. number of seconds since the beginning of the year 1970, followed by a timezone offset,
+ *    e.g. 1343630387+0800
+ * 3. Nothing.  The client system's clock and timezone offset will be used for the time.
+ *
+ * The timezone specifier must be either like +HH:MM or like +HHMM, the plugin does not support timezone names such as
+ * "WST" or "PDT".
  *
  * The difference between the server time embedded in the element's content, and the browser time, is stored and used
  * to keep the displayed time in synch with the server.  For example, if the client is determined to be 3h 2m 51s ahead
