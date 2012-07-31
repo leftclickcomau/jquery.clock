@@ -59,25 +59,25 @@
 			 *
 			 * This uses the same format string as used by the PHP date() function.  See
 			 * http://php.net/manual/en/function.date.php for details.
-			 *
-			 * It may also be set to the string 'default' or null (the default value) to use the Date.toString()
-			 * method, or to the string 'locale' to use the Date.toLocaleString() method, for formatting.
 			 */
-			outputFormat: null,
+			outputFormat: '%Y-%m-%d %H:%i:%s %O',
 
 			/**
-			 * Format mask for date input.
-			 *
-			 * The default behaviour (with value null), is to use the same format as is specified by outputFormat.
-			 *
-			 * If inputFormat is 'browser', or if inputFormat is null and outputFormat is either 'default' or 'locale',
-			 * then the date input will be parsed by Date.parse(), unless it is a timestamp followed by a timezone
-			 * offset (i.e., matches /^\d+[\+\-]\d\d:?\d\d$/).
-			 *
-			 * Note that Date.parse() has variable results across different browsers, although this can be fixed
-			 * somewhat by adding date.js available from http://datejs.org/
+			 * Format mask for date input.  The default behaviour (i.e. when inputFormat is null), is to use the same
+			 * format for parsing as is specified by outputFormat.  If inputFormat is a string, then it is used for
+			 * parsing and outputFormat is used for formatting only.
 			 */
 			inputFormat: null,
+
+			/**
+			 * Optionally, some parts of the date may be set using this option object.  The valid sub-keys are:
+			 * 'year', 'month', 'dayOfMonth', 'hour', 'minute', 'second' and 'timezoneOffset'.  Each of these must be
+			 * given a numeric value, except 'timezoneOffset' which expects the form +/-HHMM or +/-HH:MM.
+			 *
+			 * Note that any date component that is included in the element's content, when the plugin is called, will
+			 * override the settings given via this option.
+			 */
+			dateParts: {},
 
 			/**
 			 * Day names for formatting using the 'D' and 'L' format specifiers.  Override this if your language is not
@@ -146,13 +146,6 @@
 			},
 			// Date formatting functions.
 			formatDate = function(date, format) {
-				// Check for default behaviours
-				if (!format || format.toString().length === 0 || format === 'default') {
-					return date.toString();
-				}
-				if (format === 'locale') {
-					return date.toLocaleString();
-				}
 				// Utility formatting functions
 				var formatNumber = function(number, pad, plusSign) {
 						return (pad && Math.abs(number) < 10) ? (number < 0 ? '-' : (plusSign ? '+' : '')) + '0' + Math.abs(number).toString() : number.toString();
@@ -219,27 +212,21 @@
 			// Parse a date string, according to the given format, returning a UNIX timestamp (milliseconds since
 			// epoch). The date string must exactly match the format string, otherwise an invalid Date is returned.
 			parseDate = function(text, format) {
-				// Check for default behaviours
-				// TODO Support 'locale'
-				if (!format || format.toString().length === 0 || format === 'browser') {
-					return Date.parse(text);
-				}
-				var i, s,
+				var i, s, d,
 					invalidDate = Date.parse(NaN),
-					dateParts = {
-						year: null,
+					dateParts = $.extend({
+						year: null, // 4 digits, 2 digits is assumed to be 21st century
 						month: null,
 						dayOfMonth: null,
 						dayOfWeek: null, // Currently this is ignored, it is only included for validation
-						hour: null,
-						hour12: null,
-						ampm: null,
-						minute: 0,
-						second: 0,
+						hour: null, // This may be omitted, it may be given a default value later, after checking hour12 and ampm
+						hour12: null, // This is the 12 hour clock hour value, which can be used to generate the 24 hour clock hour value
+						ampm: null, // This is the 12 hour clock am/pm indicator, which can be used to generate the 24 hour clock hour value
+						minute: 0, // This may be omitted
+						second: 0, // This may be omitted
 						timezoneOffset: 0 // Allow timezone to be omitted and assume GMT / UTC
-					};
+					}, o.dateParts);
 				format = expandAliases(format);
-
 				while (format.match(/%\w/)) {
 					var matchType, pattern, regex, array, abbr, part, adjustment = 0,
 						match, matchIndex, matchLength,
@@ -445,11 +432,14 @@
 
 						case 'timezone':
 							match = text.replace(/^(\d\d:?\d\d)/, '$1');
-							dateParts.timezoneOffset = (parseInt(match.substring(0, 3), 10) * 60 + parseInt(match.substring(match.length - 2), 10)) * 60;
+							dateParts.timezoneOffset = match;
 							text = text.substring(match.length);
 							break;
 					}
 					format = format.replace(/^.*?%\w/, '');
+				}
+				if (format !== text) {
+					return invalidDate;
 				}
 				if (dateParts.hour12 !== null && dateParts.ampm !== null) {
 					if (dateParts.hour !== null && dateParts.hour !== dateParts.hour12 + dateParts.ampm) {
@@ -465,30 +455,40 @@
 				if (dateParts.year === null || dateParts.month === null || dateParts.dayOfMonth === null) {
 					return invalidDate;
 				}
+				if (dateParts.timezoneOffset && dateParts.timezoneOffset.match(/^[\+\-]\d{2}:?\d{2}$/)) {
+					dateParts.timezoneOffset = (parseInt(dateParts.timezoneOffset.substring(0, 3), 10) * 60 + parseInt(dateParts.timezoneOffset.substring(dateParts.timezoneOffset.length - 2), 10)) * 60;
+				}
 				// TODO Range checking / strict dates
 				// TODO milliseconds
-				return new Date(dateParts.year, dateParts.month, dateParts.dayOfMonth, dateParts.hour, dateParts.minute, dateParts.second).getTime() - (dateParts.timezoneOffset + new Date().getTimezoneOffset() * 60) * 1000;
+				return new Date(dateParts.year, dateParts.month, dateParts.dayOfMonth, dateParts.hour, dateParts.minute, dateParts.second);
 			},
 			// Utility functions
 			parseServerDate = function(text) {
-				var serverTimezone, serverTime, localTime = getCurrentTimestamp();
+				var serverTimezone, localTime = getCurrentTimestamp();
 
 				// Determine the UTC time
-				serverTime = (text.length === 0) ?
-					localTime :
-					((text.match(/^\d+(?:[\+\-]\d{2}:?\d{2})?$/)) ?
-						parseInt(text.replace(/[\+\-]\d{2}:?\d{2}$/, ''), 10) * 1000 :
-						parseDate(text, o.inputFormat ? o.inputFormat : o.outputFormat));
-				serverOffset = localTime - serverTime;
+				serverOffset = 0;
+				if (text.match(/^\d+(?:[\+\-]\d{2}:?\d{2})?$/)) {
+					serverOffset = localTime - parseInt(text.replace(/[\+\-]\d{2}:?\d{2}$/, ''), 10) * 1000;
+				} else if (text.length > 0) {
+					serverOffset = localTime - parseDate(text, o.inputFormat ? o.inputFormat : o.outputFormat);
+				}
 
 				// Determine the timezone offset
 				if (text.match(/[\+\-]\d{2}:?\d{2}$/)) {
 					// Parse timezone offset from text.
 					serverTimezone = text.replace(/^.*([\+\-]\d{2}:?\d{2})$/, '$1');
 					serverTimezoneOffset = (parseInt(serverTimezone.substring(0, 3), 10) * 60 + parseInt(serverTimezone.substring(serverTimezone.length - 2), 10)) * 60;
-				} else {
+				} else if (o.dateParts.timezoneOffset) {
+					// Parse timezone offset from options.
+					serverTimezone = o.dateParts.timezoneOffset;
+					serverTimezoneOffset = (parseInt(serverTimezone.substring(0, 3), 10) * 60 + parseInt(serverTimezone.substring(serverTimezone.length - 2), 10)) * 60;
+				} else if (text.length === 0) {
 					// Use client-side timezone offset.
 					serverTimezoneOffset = new Date().getTimezoneOffset() * -60;
+				} else {
+					// Use UTC
+					serverTimezoneOffset = 0;
 				}
 			},
 			updateView = function() {
@@ -503,6 +503,9 @@
 				});
 			};
 		// Bootstrap
+		if (o.dateParts.timezoneOffset && o.dateParts.timezoneOffset.match(/^[\+\-]\d{2}:?\d{2}$/)) {
+			serverTimezoneOffset = (parseInt(o.dateParts.timezoneOffset.substring(0, 3), 10) * 60 + parseInt(o.dateParts.timezoneOffset.substring(o.dateParts.timezoneOffset.length - 2), 10)) * 60;
+		}
 		parseServerDate(self.text());
 		updateView();
 		if (o.updateInterval > 0) {
