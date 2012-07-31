@@ -80,6 +80,20 @@
 			dateParts: {},
 
 			/**
+			 * Number of milliseconds between checks for alarms.  If alarms need to have better than 1-second accuracy,
+			 * decrease this value.  If alarms can be less accurate, increase the value.
+			 */
+			alarmInterval: 1000,
+
+			/**
+			 * Array of alarm definitions, each of which is a key-value array with two keys.  The "time" key specifies
+			 * the time that the alarm should be triggered, as a date in the same format as expected by the plugin for
+			 * the initial date (i.e. according to inputFormat or outputFormat as described above).  The "action" key
+			 * of each alarm definition is a function that is executed when the time arrives.
+			 */
+			alarms: [],
+
+			/**
 			 * Day names for formatting using the 'D' and 'L' format specifiers.  Override this if your language is not
 			 * English, or to use a different abbreviation style.
 			 */
@@ -134,8 +148,12 @@
 			// Used to store the difference between local time and server time, to simplify calculations
 			serverOffset, serverTimezoneOffset, localTimezoneOffset = new Date().getTimezoneOffset() * -60,
 			// Get the current, local timestamp
-			getCurrentTimestamp = function() {
+			getCurrentLocalTimestamp = function() {
 				return $.isFunction(Date.now) ? Date.now() : new Date().getTime();
+			},
+			// Get the current timestamp, adjusted for the server
+			getCurrentServerTimestamp = function() {
+				return getCurrentLocalTimestamp() - serverOffset;
 			},
 			// Expand full format specifiers into their equivalent components
 			expandAliases = function(format) {
@@ -214,6 +232,7 @@
 			parseDate = function(text, format) {
 				var i, s, d,
 					invalidDate = Date.parse(NaN),
+					originalText = text,
 					dateParts = $.extend({
 						year: null, // 4 digits, 2 digits is assumed to be 21st century
 						month: null,
@@ -383,7 +402,6 @@
 								dateParts[part] = parseInt(match[0], 10) + adjustment;
 								text = text.replace(regex, '');
 							} else {
-								alert('invalid ' + text + ' against ' + regex);
 								return invalidDate;
 							}
 							break;
@@ -463,11 +481,11 @@
 				}
 				// TODO Range checking / strict dates
 				// TODO milliseconds
-				return new Date(dateParts.year, dateParts.month, dateParts.dayOfMonth, dateParts.hour, dateParts.minute, dateParts.second);
+				return new Date(dateParts.year, dateParts.month, dateParts.dayOfMonth, dateParts.hour, dateParts.minute, dateParts.second).getTime() - (new Date().getTimezoneOffset() * 60 + dateParts.timezoneOffset) * 1000;
 			},
 			// Utility functions
 			parseServerDate = function(text) {
-				var serverTimezone, localTime = getCurrentTimestamp();
+				var serverTimezone, localTime = getCurrentLocalTimestamp();
 
 				// Determine the UTC time
 				serverOffset = 0;
@@ -496,13 +514,22 @@
 			},
 			updateView = function() {
 				var d = new Date();
-				d.setTime(getCurrentTimestamp() - serverOffset + (serverTimezoneOffset - localTimezoneOffset) * 1000);
+				d.setTime(getCurrentServerTimestamp() + (serverTimezoneOffset - localTimezoneOffset) * 1000);
 				self.html(formatDate(d, o.outputFormat));
 			},
 			updateModel = function() {
 				$.get(o.ajaxUrl, null, function(result) {
 					parseServerDate(result);
 					updateView();
+				});
+			},
+			checkAlarms = function() {
+				var now = getCurrentServerTimestamp();
+				$.each(o.alarms, function(i, alarm) {
+					if (!alarm.triggered && alarm.serverTimestamp <= now) {
+						alarm.action();
+						alarm.triggered = true;
+					}
 				});
 			};
 		// Bootstrap
@@ -513,6 +540,12 @@
 		}
 		if (o.ajaxInterval > 0 && o.ajaxUrl) {
 			setInterval(updateModel, o.ajaxInterval);
+		}
+		if (o.alarmInterval > 0 && o.alarms.length > 0) {
+			$.each(o.alarms, function(i, alarm) {
+				o.alarms[i].serverTimestamp = parseDate(alarm.time, o.inputFormat ? o.inputFormat : o.outputFormat);
+			});
+			setInterval(checkAlarms, o.alarmInterval);
 		}
 	}
 }(jQuery));

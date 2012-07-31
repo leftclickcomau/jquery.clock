@@ -21,6 +21,9 @@
 	Each of the sections below demonstrates a different aspect of the functionality of the clock plugin.
 	Functionality from different sections can be combined.
 	</p>
+	<p>
+	See also: <a href="alarms.php">alarms demo</a>.
+	</p>
 </div>
 
 <div class="odd">
@@ -48,7 +51,7 @@ $(function() {
 <?php echo htmlentities(ob_get_clean()); ?>
 </pre>
 	<h3>Result</h3>
-	Your local time is currently...<br/>
+	Your <strong>local time</strong> is currently...<br/>
 	<div class="clock" id="clock1"></div>
 </div>
 
@@ -81,7 +84,7 @@ $(function() {
 <?php echo htmlentities(ob_get_clean()); ?>
 </pre>
 	<h3>Result</h3>
-	Server time is currently...<br/>
+	<strong>Server time</strong> is currently...<br/>
 	<div class="clock" id="clock2"><?php echo date('UO'); ?></div>
 </div>
 
@@ -109,7 +112,7 @@ $(function() {
 <?php echo htmlentities(ob_get_clean()); ?>
 </pre>
 	<h3>Result</h3>
-	Your local time is currently...<br/>
+	Your <strong>local time</strong> is currently...<br/>
 	<div class="clock" id="clock3"></div>
 </div>
 
@@ -145,7 +148,7 @@ $(function() {
 <?php echo htmlentities(ob_get_clean()); ?>
 </pre>
 	<h3>Result</h3>
-	Server time is currently...<br/>
+	<strong>Server time</strong> is currently...<br/>
 	<div class="clock" id="clock4"><?php echo date('d/m/Y g:i:sa P'); ?></div>
 </div>
 
@@ -185,7 +188,7 @@ $(function() {
 <?php echo htmlentities(ob_get_clean()); ?>
 </pre>
 	<h3>Result</h3>
-	Server time is currently...<br/>
+	<strong>Server time</strong> is currently...<br/>
 	<div class="clock" id="clock5"><?php echo date('d/m/Y H:i:s O'); ?></div>
 </div>
 
@@ -225,7 +228,7 @@ $(function() {
 <?php echo htmlentities(ob_get_clean()); ?>
 </pre>
 	<h3>Result</h3>
-	Server time is currently...<br/>
+	<strong>Server time</strong> is currently...<br/>
 	<div class="clock" id="clock6"><?php echo date('d/m/Y H:i:s'); ?></div>
 </div>
 
