@@ -163,8 +163,8 @@
 					formatAmPm = function(date) {
 						return date.getHours() < 12 ? 'AM' : 'PM';
 					},
-					formatTimezoneOffset = function(offsetMinutes) {
-						return formatNumber(offsetMinutes / 60, true, true) + formatNumber(offsetMinutes % 60, true);
+					formatTimezoneOffset = function(offsetMinutes, includeColon) {
+						return formatNumber(offsetMinutes / 60, true, true) + (includeColon ? ':' : '') + formatNumber(offsetMinutes % 60, true);
 					};
 				// Expand component format specifiers
 				return expandAliases(format).replace(/%\w/g, function(token) {
@@ -200,8 +200,8 @@
 						//case 'u': return formatNumber(date.getMicroseconds(), true); // TODO
 						//case 'e': // TODO
 						//case 'I': // TODO
-						case 'O': return formatTimezoneOffset(serverTimezoneOffset / 60);
-						//case 'P': // TODO
+						case 'O': return formatTimezoneOffset(serverTimezoneOffset / 60, false);
+						case 'P': return formatTimezoneOffset(serverTimezoneOffset / 60, true)
 						//case 'T': // TODO
 						//case 'Z': // TODO
 						case 'U': return date.getTime();
@@ -244,7 +244,7 @@
 					switch (token) {
 						case 'd':
 							matchType = 'regexParseInt';
-							pattern = '\\d\\d?';
+							pattern = '\\d\\d';
 							part = 'dayOfMonth';
 							break;
 						case 'D':
@@ -284,7 +284,7 @@
 							break;
 						case 'm':
 							matchType = 'regexParseInt';
-							pattern = '\\d\\d?';
+							pattern = '\\d\\d';
 							part = 'month';
 							adjustment = -1;
 							break;
@@ -310,7 +310,7 @@
 							break;
 						case 'y':
 							matchType = 'regexParseInt';
-							pattern = '\\d\\d\\d\\d';
+							pattern = '\\d\\d';
 							part = 'year';
 							adjustment = 2000; // TODO Allow dates in the 20th century?
 							break;
@@ -325,12 +325,12 @@
 						//case 'B': // wtf?!
 						case 'g':
 							matchType = 'regexParseInt';
-							pattern = '[1-9]\\d';
+							pattern = '[1-9]\\d?';
 							part = 'hour12';
 							break;
 						case 'G':
 							matchType = 'regexParseInt';
-							pattern = '[1-9]\\d';
+							pattern = '[1-9]\\d?';
 							part = 'hour';
 							break;
 						case 'h':
@@ -359,7 +359,9 @@
 						case 'O':
 							matchType = 'timezone';
 							break;
-						//case 'P': // TODO
+						case 'P':
+							matchType = 'timezone';
+							break;
 						//case 'T': // TODO
 						//case 'Z': // TODO
 						case 'U':
@@ -381,6 +383,7 @@
 								dateParts[part] = parseInt(match[0], 10) + adjustment;
 								text = text.replace(regex, '');
 							} else {
+								alert('invalid ' + text + ' against ' + regex);
 								return invalidDate;
 							}
 							break;
@@ -503,9 +506,6 @@
 				});
 			};
 		// Bootstrap
-		if (o.dateParts.timezoneOffset && o.dateParts.timezoneOffset.match(/^[\+\-]\d{2}:?\d{2}$/)) {
-			serverTimezoneOffset = (parseInt(o.dateParts.timezoneOffset.substring(0, 3), 10) * 60 + parseInt(o.dateParts.timezoneOffset.substring(o.dateParts.timezoneOffset.length - 2), 10)) * 60;
-		}
 		parseServerDate(self.text());
 		updateView();
 		if (o.updateInterval > 0) {

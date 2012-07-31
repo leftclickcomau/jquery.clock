@@ -103,7 +103,7 @@ $(function() {
 <?php ob_start(); ?>
 $(function() {
 	$('#clock3').clock({
-		outputFormat: '%d/%m/%Y %H:%i:%s %O'
+		outputFormat: '%d/%m/%Y %g:%i:%s%a %P'
 	});
 });
 <?php echo htmlentities(ob_get_clean()); ?>
@@ -128,25 +128,25 @@ $(function() {
 	The plugin is called on an element with the following embedded content:
 	</p>
 	<div class="original-content">
-		<?php echo date('d/m/Y H:i:s O'); ?>
+		<?php echo date('d/m/Y g:i:sa P'); ?>
 	</div>
 	<h3>PHP Source</h3>
 <pre>
-&lt;div id="clock4"&gt;&lt;?php echo date('d/m/Y H:i:s O'); ?&gt;&lt;/div&gt;
+&lt;div id="clock4"&gt;&lt;?php echo date('d/m/Y g:i:sa P'); ?&gt;&lt;/div&gt;
 </pre>
 	<h3>JavaScript call</h3>
 <pre>
 <?php ob_start(); ?>
 $(function() {
 	$('#clock4').clock({
-		outputFormat: '%d/%m/%Y %H:%i:%s %O'
+		outputFormat: '%d/%m/%Y %g:%i:%s%a %P'
 	});
 });
 <?php echo htmlentities(ob_get_clean()); ?>
 </pre>
 	<h3>Result</h3>
 	Server time is currently...<br/>
-	<div class="clock" id="clock4"><?php echo date('d/m/Y H:i:s O'); ?></div>
+	<div class="clock" id="clock4"><?php echo date('d/m/Y g:i:sa P'); ?></div>
 </div>
 
 <div class="odd">
@@ -235,18 +235,17 @@ $(function() {
 	$(function() {
 		$('#clock1').clock();
 		$('#clock2').clock();
-		$('#clock3').clock();
+		$('#clock3').clock({
+			outputFormat: '%d/%m/%Y %g:%i:%s%a %P'
+		});
 		$('#clock4').clock({
-			outputFormat: '%d/%m/%Y %H:%i:%s %O'
+			outputFormat: '%d/%m/%Y %g:%i:%s%a %P'
 		});
 		$('#clock5').clock({
-			outputFormat: '%d/%m/%Y %H:%i:%s %O'
-		});
-		$('#clock6').clock({
 			inputFormat: '%d/%m/%Y %H:%i:%s %O',
 			outputFormat: '%d/%m/%Y %H:%i:%s'
 		});
-		$('#clock7').clock({
+		$('#clock6').clock({
 			outputFormat: '%d/%m/%Y %H:%i:%s',
 			dateParts: {
 				timezoneOffset: '+0800'
