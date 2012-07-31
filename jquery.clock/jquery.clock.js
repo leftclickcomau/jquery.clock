@@ -38,21 +38,20 @@
 			/**
 			 * Number of milliseconds between display updates.  If you are not displaying seconds, then this can be set
 			 * to a larger value.  To display the server time when the page was initially loaded only, parsed and
-			 * formatted according to outputFormat, set this to false.
+			 * formatted according to outputFormat, set this to 0.
 			 */
 			updateInterval: 100,
 
 			/**
 			 * Number of milliseconds between AJAX calls to the URL given by ajaxUrl, which must also be set if this is
-			 * non-false.  The default value of false means no AJAX updates are performed.  See main description for
-			 * details.
+			 * non-zero.  The default value of 0 means no AJAX updates are performed.  See main description for details.
 			 */
-			ajaxInterval: false,
+			ajaxInterval: 0,
 
 			/**
 			 * URL to retrieve the time updates from.  See main description details.
 			 */
-			ajaxUrl: false,
+			ajaxUrl: null,
 
 			/**
 			 * Format mask for date output.
@@ -232,7 +231,6 @@
 			parseDate = function(text, format) {
 				var i, s, d,
 					invalidDate = Date.parse(NaN),
-					originalText = text,
 					dateParts = $.extend({
 						year: null, // 4 digits, 2 digits is assumed to be 21st century
 						month: null,
@@ -425,7 +423,7 @@
 
 						case 'suffixIndex':
 							matchIndex = null;
-							if (text.substring(0, o.ordinalSuffixes.common) !== o.ordinalSuffixes.common) {
+							if (text.substring(0, o.ordinalSuffixes.common.length) !== o.ordinalSuffixes.common) {
 								$.each(o.ordinalSuffixes.overrides, function(i, s) {
 									if (text.substring(0, s.length) === s) {
 										matchIndex = i;
