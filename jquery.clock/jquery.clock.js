@@ -1,14 +1,9 @@
 /**
  * jQuery Clock plugin
  * 
- * Display a dynamically updating client-side clock.
+ * Dynamically updating client-side clock that can display either server or client time.
  *
- * The element(s) on which the plugin is called must contain one of the following:
- *
- * 1. An RFC 2822 compliant date-time, e.g. 29-07-2012 18:07:44 +08:00
- * 2. A UNIX timestamp, i.e. number of seconds since the beginning of the year 1970, followed by a timezone offset,
- *    e.g. 1343630387+0800
- * 3. Nothing.  The client system's clock and timezone offset will be used for the time.
+ * The element on which the plugin is called must contain either a date which matches the dateFormat option, or
  *
  * The timezone specifier must be either like +HH:MM or like +HHMM, the plugin does not support timezone names such as
  * "WST" or "PDT".
@@ -60,10 +55,29 @@
 			ajaxUrl: false,
 
 			/**
-			 * Format mask for the date output.  This uses the same format string as used by the PHP date() function.
-			 * See http://php.net/manual/en/function.date.php for details.
+			 * Format mask for date output.
+			 *
+			 * This uses the same format string as used by the PHP date() function.  See
+			 * http://php.net/manual/en/function.date.php for details.
+			 *
+			 * It may also be set to the string 'default' or null (the default value) to use the Date.toString()
+			 * method, or to the string 'locale' to use the Date.toLocaleString() method, for formatting.
 			 */
-			outputFormat: 'default',
+			outputFormat: null,
+
+			/**
+			 * Format mask for date input.
+			 *
+			 * The default behaviour (with value null), is to use the same format as is specified by outputFormat.
+			 *
+			 * If inputFormat is 'browser', or if inputFormat is null and outputFormat is either 'default' or 'locale',
+			 * then the date input will be parsed by Date.parse(), unless it is a timestamp followed by a timezone
+			 * offset (i.e., matches /^\d+[\+\-]\d\d:?\d\d$/).
+			 *
+			 * Note that Date.parse() has variable results across different browsers, although this can be fixed
+			 * somewhat by adding date.js available from http://datejs.org/
+			 */
+			inputFormat: null,
 
 			/**
 			 * Day names for formatting using the 'D' and 'L' format specifiers.  Override this if your language is not
@@ -123,14 +137,17 @@
 			getCurrentTimestamp = function() {
 				return $.isFunction(Date.now) ? Date.now() : new Date().getTime();
 			},
-			// Date formatting function.
+			// Expand full format specifiers into their equivalent components
+			expandAliases = function(format) {
+				$.each(o.aliases, function(alias) {
+					format = format.replace(alias.regex, alias.replacement);
+				});
+				return format;
+			},
+			// Date formatting functions.
 			formatDate = function(date, format) {
-				// If no format specified, or format is empty, just return the default textual representation
-				if (!format || format.toString().length === 0) {
-					return date.toString();
-				}
-				// Check for certain specific identifiers in the format
-				if (format === 'default') {
+				// Check for default behaviours
+				if (!format || format.toString().length === 0 || format === 'default') {
 					return date.toString();
 				}
 				if (format === 'locale') {
@@ -156,12 +173,8 @@
 					formatTimezoneOffset = function(offsetMinutes) {
 						return formatNumber(offsetMinutes / 60, true, true) + formatNumber(offsetMinutes % 60, true);
 					};
-				// Expand full format specifiers into their equivalent components
-				$.each(o.aliases, function(alias) {
-					format = format.replace(alias.regex, alias.replacement);
-				});
 				// Expand component format specifiers
-				return format.replace(/%\w/g, function(token) {
+				return expandAliases(format).replace(/%\w/g, function(token) {
 					token = token.substring(1);
 					switch (token) {
 						case 'd': return formatNumber(date.getDate(), true);
@@ -203,6 +216,259 @@
 					}
 				});
 			},
+			// Parse a date string, according to the given format, returning a UNIX timestamp (milliseconds since
+			// epoch). The date string must exactly match the format string, otherwise an invalid Date is returned.
+			parseDate = function(text, format) {
+				// Check for default behaviours
+				// TODO Support 'locale'
+				if (!format || format.toString().length === 0 || format === 'browser') {
+					return Date.parse(text);
+				}
+				var i, s,
+					invalidDate = Date.parse(NaN),
+					dateParts = {
+						year: null,
+						month: null,
+						dayOfMonth: null,
+						dayOfWeek: null, // Currently this is ignored, it is only included for validation
+						hour: null,
+						hour12: null,
+						ampm: null,
+						minute: 0,
+						second: 0,
+						timezoneOffset: 0 // Allow timezone to be omitted and assume GMT / UTC
+					};
+				format = expandAliases(format);
+
+				while (format.match(/%\w/)) {
+					var matchType, pattern, regex, array, abbr, part, adjustment = 0,
+						match, matchIndex, matchLength,
+						formatBefore = format.replace(/^(.*?)%\w.*$/, '$1'),
+						token = format.replace(/.*?%(\w).*/, '$1');
+					// Process the boilerplate up to the next token
+					if (formatBefore.length > 0) {
+						if (text.substring(0, formatBefore.length) !== formatBefore) {
+							return invalidDate;
+						}
+						text = text.substring(formatBefore.length);
+					}
+					// Match the text to the specified token, returning an error immediately if there is not a match,
+					// or updating the dateParts key-value array
+					switch (token) {
+						case 'd':
+							matchType = 'regexParseInt';
+							pattern = '\\d\\d?';
+							part = 'dayOfMonth';
+							break;
+						case 'D':
+							matchType = 'arrayIndex';
+							array = 'dayNames';
+							abbr = true;
+							part = 'dayOfWeek';
+							break;
+						case 'j':
+							matchType = 'regexParseInt';
+							pattern = '[1-9]\\d?';
+							part = 'dayOfMonth';
+							break;
+						case 'l':
+							matchType = 'arrayIndex';
+							array = 'dayNames';
+							abbr = false;
+							part = 'dayOfWeek';
+							break;
+						//case 'N': // Disabled because other correlating methods are not done
+						case 'S':
+							matchType = 'suffixIndex';
+							part = 'dayOfMonth';
+							break;
+						case 'w':
+							matchType = 'regexParseInt';
+							pattern = '[0-6]';
+							part = 'dayOfWeek';
+							break;
+						//case 'z': // TODO
+						//case 'W': // TODO
+						case 'F':
+							matchType = 'regexParseInt';
+							array = 'monthNames';
+							abbr = false;
+							part = 'month';
+							break;
+						case 'm':
+							matchType = 'regexParseInt';
+							pattern = '\\d\\d?';
+							part = 'month';
+							adjustment = -1;
+							break;
+						case 'M':
+							matchType = 'arrayIndex';
+							array = 'monthNames';
+							abbr = true;
+							part = 'month';
+							break;
+						case 'n':
+							matchType = 'regexParseInt';
+							pattern = '[1-9]\\d?';
+							part = 'month';
+							adjustment = -1;
+							break;
+						//case 't': // TODO
+						//case 'L': // TODO
+						//case 'o': // Disabled because other correlating methods are not done
+						case 'Y':
+							matchType = 'regexParseInt';
+							pattern = '\\d\\d\\d\\d';
+							part = 'year';
+							break;
+						case 'y':
+							matchType = 'regexParseInt';
+							pattern = '\\d\\d\\d\\d';
+							part = 'year';
+							adjustment = 2000; // TODO Allow dates in the 20th century?
+							break;
+						case 'a':
+							matchType = 'ampm';
+							part = 'ampm';
+							break;
+						case 'A':
+							matchType = 'ampm';
+							part = 'ampm';
+							break;
+						//case 'B': // wtf?!
+						case 'g':
+							matchType = 'regexParseInt';
+							pattern = '[1-9]\\d';
+							part = 'hour12';
+							break;
+						case 'G':
+							matchType = 'regexParseInt';
+							pattern = '[1-9]\\d';
+							part = 'hour';
+							break;
+						case 'h':
+							matchType = 'regexParseInt';
+							pattern = '\\d\\d';
+							part = 'hour12';
+							break;
+						case 'H':
+							matchType = 'regexParseInt';
+							pattern = '\\d\\d';
+							part = 'hour';
+							break;
+						case 'i':
+							matchType = 'regexParseInt';
+							pattern = '\\d\\d';
+							part = 'minute';
+							break;
+						case 's':
+							matchType = 'regexParseInt';
+							pattern = '\\d\\d';
+							part = 'second';
+							break;
+						//case 'u': // TODO
+						//case 'e': // TODO
+						//case 'I': // TODO
+						case 'O':
+							matchType = 'timezone';
+							break;
+						//case 'P': // TODO
+						//case 'T': // TODO
+						//case 'Z': // TODO
+						case 'U':
+							matchType = 'regexParseInt';
+							pattern = '\\d+';
+							part = 'timestamp';
+							break;
+						default:
+							if (text.substring(0, 1) === token) {
+								text = text.substring(1);
+							} else {
+								return invalidDate;
+							}
+					}
+					switch (matchType) {
+						case 'regexParseInt':
+							regex = new RegExp('^' + pattern);
+							if ((match = regex.exec(text)) !== null) {
+								dateParts[part] = parseInt(match[0], 10) + adjustment;
+								text = text.replace(regex, '');
+							} else {
+								return invalidDate;
+							}
+							break;
+
+						case 'arrayIndex':
+							matchIndex = null;
+							matchLength = 0;
+							$.each(o[array][abbr ? 'abbr' : 'full'], function(i, s) {
+								if (text.substring(s.length) === s) {
+									matchIndex = i;
+									matchLength = s.length;
+								}
+							});
+							if (matchIndex !== null && matchLength > 0) {
+								dateParts[part] = matchIndex + adjustment;
+								text = text.substring(matchLength);
+							} else {
+								return invalidDate;
+							}
+							break;
+
+						case 'suffixIndex':
+							matchIndex = null;
+							if (text.substring(0, o.ordinalSuffixes.common) !== o.ordinalSuffixes.common) {
+								$.each(o.ordinalSuffixes.overrides, function(i, s) {
+									if (text.substring(0, s.length) === s) {
+										matchIndex = i;
+										matchLength = s.length;
+									}
+								})
+							}
+							if (matchIndex !== null) {
+								text = text.substring(matchLength);
+							} else {
+								return invalidDate;
+							}
+							break;
+
+						case 'ampm':
+							// TODO Match case.
+							match = text.substring(0, 2);
+							if (match.toUpperCase() === 'AM' || match.toLowerCase() === 'PM') {
+								dateParts.ampm = (match.toUpperCase() === 'AM') ? 0 : 12;
+								text = text.substring(match.length);
+							} else {
+								return invalidDate;
+							}
+							break;
+
+						case 'timezone':
+							match = text.replace(/^(\d\d:?\d\d)/, '$1');
+							dateParts.timezoneOffset = (parseInt(match.substring(0, 3), 10) * 60 + parseInt(match.substring(match.length - 2), 10)) * 60;
+							text = text.substring(match.length);
+							break;
+					}
+					format = format.replace(/^.*?%\w/, '');
+				}
+				if (dateParts.hour12 !== null && dateParts.ampm !== null) {
+					if (dateParts.hour !== null && dateParts.hour !== dateParts.hour12 + dateParts.ampm) {
+						// Both 12 hour time and 24 hour time were given, and they don't match
+						return invalidDate;
+					} else {
+						dateParts.hour = dateParts.hour12 + dateParts.ampm;
+					}
+				}
+				if (dateParts.hour === null) {
+					dateParts.hour = 0;
+				}
+				if (dateParts.year === null || dateParts.month === null || dateParts.dayOfMonth === null) {
+					return invalidDate;
+				}
+				// TODO Range checking / strict dates
+				// TODO Set the timezone (HOW?!)
+				return new Date(dateParts.year, dateParts.month, dateParts.dayOfMonth, dateParts.hour, dateParts.minute, dateParts.second).getTime(); // TODO milliseconds
+			},
 			// Utility functions
 			parseServerDate = function(text) {
 				var serverTimezone, serverTime, localTime = getCurrentTimestamp();
@@ -212,7 +478,7 @@
 					localTime :
 					((text.match(/^\d+(?:[\+\-]\d{2}:?\d{2})?$/)) ?
 						parseInt(text.replace(/[\+\-]\d{2}:?\d{2}$/, ''), 10) * 1000 :
-						new Date(text).getTime());
+						parseDate(text, o.inputFormat ? o.inputFormat : o.outputFormat));
 				serverOffset = localTime - serverTime;
 
 				// Determine the timezone offset

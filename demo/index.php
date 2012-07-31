@@ -83,7 +83,8 @@ $(function() {
 <?php ob_start(); ?>
 $(function() {
 	$('#clock2').clock({
-		outputFormat: '%i minutes and %s seconds past %g%a on %l the %d%S of %F in the year %Y'
+		outputFormat: '%i minutes and %s seconds past %g%a on %l the %d%S of %F in the year %Y',
+		inputFormat: 'browser'
 	});
 });
 	<?php echo htmlentities(ob_get_clean()); ?>
@@ -109,22 +110,6 @@ $(function() {
 		</td>
 	</tr>
 	<tr>
-		<td class="demonstration"><div id="clock4" class="clock">2012-07-30T12:00:00+08:00</div></td>
-		<td class="summary">Default behaviour with initial formatted hardcoded time</td>
-		<td class="explanation">Formatted, hardcoded date:<br/><code>2012-07-30T12:00:00+08:00</code></td>
-		<td class="explanation">None</td>
-		<td class="explanation">None</td>
-		<td class="javascript">
-<pre>
-<?php ob_start(); ?>
-$(function() {
-	$('#clock4').clock();
-});
-<?php echo htmlentities(ob_get_clean()); ?>
-</pre>
-		</td>
-	</tr>
-	<tr>
 		<td class="demonstration"><div id="clock5" class="clock"><?php echo date('UP'); ?></div></td>
 		<td class="summary">Default behaviour with initial server timestamp and AJAX updates (also timestamps)</td>
 		<td class="explanation">Timestamp from server:<br/><code><?php echo date('UP'); ?></code></td>
@@ -144,27 +129,8 @@ $(function() {
 		</td>
 	</tr>
 	<tr>
-		<td class="demonstration"><div id="clock6" class="clock"><?php echo date('c'); ?></div></td>
-		<td class="summary">Default behaviour with initial server formatted time and AJAX updates (also formatted time)</td>
-		<td class="explanation">Formatted date from server:<br/><code><?php echo date('c'); ?></code></td>
-		<td class="explanation">Once per minute from <code>date.php</code> (returns a timestamp from server)</td>
-		<td class="explanation">None</td>
-		<td class="javascript">
-<pre>
-<?php ob_start(); ?>
-$(function() {
-	$('#clock6').clock({
-		ajaxInterval: 60000,
-		ajaxUrl: 'date2.php'
-	});
-});
-	<?php echo htmlentities(ob_get_clean()); ?>
-</pre>
-		</td>
-	</tr>
-	<tr>
 		<td class="demonstration"><div id="clock7" class="clock"><?php echo time(); ?></div></td>
-		<td class="summary">Default behaviour with initial server timestamp and no timezone -- THIS IS WRONG!</td>
+		<td class="summary">Default behaviour with initial server timestamp and no timezone<br><strong>This shows the wrong time, unless client and server are in the same time zone</strong></td>
 		<td class="explanation">Timestamp from server:<br/><code><?php echo time(); ?></code></td>
 		<td class="explanation">None</td>
 		<td class="explanation">None</td>
@@ -172,9 +138,43 @@ $(function() {
 <pre>
 <?php ob_start(); ?>
 $(function() {
-	$('#clock6').clock({
-		ajaxInterval: 60000,
-		ajaxUrl: 'date2.php'
+	$('#clock7').clock({});
+});
+	<?php echo htmlentities(ob_get_clean()); ?>
+</pre>
+		</td>
+	</tr>
+	<tr>
+		<td class="demonstration"><div id="clock8" class="clock"><?php echo date('d/m/Y H:i:s O'); ?></div></td>
+		<td class="summary">Default behaviour with custom input/output format</td>
+		<td class="explanation">Custom formatted time from server:<br/><code><?php echo date('d/m/Y H:i:s O'); ?></code></td>
+		<td class="explanation">None</td>
+		<td class="explanation">None</td>
+		<td class="javascript">
+<pre>
+<?php ob_start(); ?>
+$(function() {
+	$('#clock8').clock({
+		outputFormat: '%d/%m/%Y %H:%i:%s %O'
+	});
+});
+	<?php echo htmlentities(ob_get_clean()); ?>
+</pre>
+		</td>
+	</tr>
+	<tr>
+		<td class="demonstration"><div id="clock9" class="clock"><?php echo date('d/m/Y H:i:s O'); ?></div></td>
+		<td class="summary">Default behaviour with custom input/output format</td>
+		<td class="explanation">Custom formatted time from server:<br/><code><?php echo date('d/m/Y H:i:s O'); ?></code></td>
+		<td class="explanation">None</td>
+		<td class="explanation">None</td>
+		<td class="javascript">
+<pre>
+<?php ob_start(); ?>
+$(function() {
+	$('#clock9').clock({
+		inputFormat: '%d/%m/%Y %H:%i:%s %O'
+		outputFormat: '%d/%m/%Y %H:%i:%s'
 	});
 });
 	<?php echo htmlentities(ob_get_clean()); ?>
@@ -191,26 +191,28 @@ $(function() {
 		$('#clock0').clock();
 		$('#clock1').clock();
 		$('#clock2').clock({
-			outputFormat: '%i minutes and %s seconds past %g%a on %l the %d%S of %F in the year %Y'
+			outputFormat: '%i minutes and %s seconds past %g%a on %l the %d%S of %F in the year %Y',
+			inputFormat: 'browser'
 		});
 		$('#clock3').clock({
 			outputFormat: '<span class="date-part">%d-%m-%Y</span> <span class="time-part">%H:%i:%s</span>'
 		});
-		$('#clock4').clock();
 		$('#clock5').clock({
 			ajaxInterval: 60000,
 			ajaxUrl: 'date.php'
 		});
-		$('#clock6').clock({
-			ajaxInterval: 60000,
-			ajaxUrl: 'date2.php'
-		});
 		$('#clock7').clock();
+		$('#clock8').clock({
+			outputFormat: '%d/%m/%Y %H:%i:%s %O'
+		});
+		$('#clock9').clock({
+			inputFormat: '%d/%m/%Y %H:%i:%s %O',
+			outputFormat: '%d/%m/%Y %H:%i:%s'
+		});
 
 		$('td.javascript').each(function() {
 			var $popup = $('<div></div>').addClass('popup').html($(this).html()).hide().appendTo($(document.body));
 			$(this).html('Display').addClass('display-hover').hover(function(evt) {
-				console.log(evt);
 				$popup.css({ top: evt.pageY + 'px', left: evt.pageX - $popup.width() + 'px' }).show();
 			}, function() {
 				$popup.hide();
