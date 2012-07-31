@@ -29,7 +29,7 @@
 		/**
 		 * Version of the clock plugin.
 		 */
-		version: '0.3',
+		version: '0.4',
 
 		/**
 		 * Default clock plugin options.
