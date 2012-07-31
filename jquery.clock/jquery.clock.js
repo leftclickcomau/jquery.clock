@@ -466,8 +466,8 @@
 					return invalidDate;
 				}
 				// TODO Range checking / strict dates
-				// TODO Set the timezone (HOW?!)
-				return new Date(dateParts.year, dateParts.month, dateParts.dayOfMonth, dateParts.hour, dateParts.minute, dateParts.second).getTime(); // TODO milliseconds
+				// TODO milliseconds
+				return new Date(dateParts.year, dateParts.month, dateParts.dayOfMonth, dateParts.hour, dateParts.minute, dateParts.second).getTime() - (dateParts.timezoneOffset + new Date().getTimezoneOffset() * 60) * 1000;
 			},
 			// Utility functions
 			parseServerDate = function(text) {

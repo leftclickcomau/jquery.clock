@@ -11,6 +11,7 @@
 		table#demonstrations { border-collapse: collapse; }
 		table#demonstrations th, table#demonstrations td { vertical-align: top; border: 1px #666 solid; padding: 1em; }
 		table#demonstrations th { background-color: #eee; }
+		table#demonstrations td.explanation code { white-space: nowrap; }
 		.popup { position: absolute; z-index: 100; background-color: #eee; border: 1px solid #000; padding: .5em; min-width: 300px; }
 		.display-hover { cursor: pointer; }
 	</style>
@@ -42,7 +43,7 @@ If enabled, periodic calls are made to the PHP using AJAX, to ensure the timer i
 	<tbody>
 	<tr>
 		<td class="demonstration"><div id="clock0" class="clock"></div></td>
-		<td class="summary">Default behaviour, no server time</td>
+		<td class="summary">Default behaviour, <strong>browser time only</strong>, no server time</td>
 		<td class="explanation">Empty (use browser time)</td>
 		<td class="explanation">None</td>
 		<td class="explanation">None</td>
@@ -69,25 +70,6 @@ $(function() {
 	$('#clock1').clock();
 });
 <?php echo htmlentities(ob_get_clean()); ?>
-</pre>
-		</td>
-	</tr>
-	<tr>
-		<td class="demonstration"><div id="clock2" class="clock"><?php echo date('r'); ?></div></td>
-		<td class="summary">Custom formatting with initial server time and timezone</td>
-		<td class="explanation">Formatted date from server:<br/><code><?php echo date('r'); ?></code></td>
-		<td class="explanation">None</td>
-		<td class="explanation"><code>outputFormat</code> demonstrating a different style of output</td>
-		<td class="javascript">
-<pre>
-<?php ob_start(); ?>
-$(function() {
-	$('#clock2').clock({
-		outputFormat: '%i minutes and %s seconds past %g%a on %l the %d%S of %F in the year %Y',
-		inputFormat: 'browser'
-	});
-});
-	<?php echo htmlentities(ob_get_clean()); ?>
 </pre>
 		</td>
 	</tr>
@@ -125,22 +107,6 @@ $(function() {
 	});
 });
 <?php echo htmlentities(ob_get_clean()); ?>
-</pre>
-		</td>
-	</tr>
-	<tr>
-		<td class="demonstration"><div id="clock7" class="clock"><?php echo time(); ?></div></td>
-		<td class="summary">Default behaviour with initial server timestamp and no timezone<br><strong>This shows the wrong time, unless client and server are in the same time zone</strong></td>
-		<td class="explanation">Timestamp from server:<br/><code><?php echo time(); ?></code></td>
-		<td class="explanation">None</td>
-		<td class="explanation">None</td>
-		<td class="javascript">
-<pre>
-<?php ob_start(); ?>
-$(function() {
-	$('#clock7').clock({});
-});
-	<?php echo htmlentities(ob_get_clean()); ?>
 </pre>
 		</td>
 	</tr>
@@ -190,10 +156,6 @@ $(function() {
 	$(function() {
 		$('#clock0').clock();
 		$('#clock1').clock();
-		$('#clock2').clock({
-			outputFormat: '%i minutes and %s seconds past %g%a on %l the %d%S of %F in the year %Y',
-			inputFormat: 'browser'
-		});
 		$('#clock3').clock({
 			outputFormat: '<span class="date-part">%d-%m-%Y</span> <span class="time-part">%H:%i:%s</span>'
 		});
@@ -201,7 +163,6 @@ $(function() {
 			ajaxInterval: 60000,
 			ajaxUrl: 'date.php'
 		});
-		$('#clock7').clock();
 		$('#clock8').clock({
 			outputFormat: '%d/%m/%Y %H:%i:%s %O'
 		});
